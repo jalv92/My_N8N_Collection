@@ -15,7 +15,8 @@
       "Bash(chmod:*)",
       "mcp__github-mcp__list_commits",
       "mcp__github-mcp__search_code",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
