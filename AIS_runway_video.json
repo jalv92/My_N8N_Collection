@@ -1,0 +1,326 @@
+{
+  "name": "AIS runway video",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        300
+      ],
+      "id": "edb225be-1f55-457a-88da-099813b62255",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.dev.runwayml.com/v1/tasks/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Runway-Version",
+              "value": "2024-11-06"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        580,
+        0
+      ],
+      "id": "88469ae7-23fb-4264-8e27-8a94f1f091a9",
+      "name": "Get Runway Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UWSHU2utn5E6ZJC1",
+          "name": "AIS Runway Video"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dev.runwayml.com/v1/image_to_video",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Runway-Version",
+              "value": "2024-11-06"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"promptImage\": \"https://findbestsolution.tech/wp-content/uploads/2024/11/aismallbusiness3.png\",\n  \"seed\": 4294967295,\n  \"model\": \"gen3a_turbo\",\n  \"promptText\": \"string\",\n  \"duration\": 5,\n  \"ratio\": \"1280:768\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "01e50e7b-9aae-4254-b155-2d63b575b240",
+      "name": "Generate Runway Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UWSHU2utn5E6ZJC1",
+          "name": "AIS Runway Video"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 40
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "bf58cca8-91fa-4d9c-990e-9f32799d4602",
+      "name": "Wait",
+      "webhookId": "7cfe6bca-7ce3-4cb9-89dd-04466882613b"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/data/shared/aidigitaltran4.png",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "id": "748f3495-f2b8-499a-bc95-18260d1087fd",
+      "name": "Load Local Image"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ],
+      "id": "91e12c57-f202-49c8-a3a4-d03a670ffd53",
+      "name": "Convert To Base64"
+    },
+    {
+      "parameters": {
+        "amount": 40
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        740,
+        300
+      ],
+      "id": "b936ba3c-743f-4fdf-9692-297bb7291c27",
+      "name": "Wait1",
+      "webhookId": "d1e04583-0ec1-4ac9-924b-05bc96ed9bf6"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.dev.runwayml.com/v1/tasks/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Runway-Version",
+              "value": "2024-11-06"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        300
+      ],
+      "id": "322dc351-a3ae-4afc-a9d3-85cbc1230c11",
+      "name": "Get Runway Video1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UWSHU2utn5E6ZJC1",
+          "name": "AIS Runway Video"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dev.runwayml.com/v1/image_to_video",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Runway-Version",
+              "value": "2024-11-06"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"promptImage\": \"data:image/jpeg;base64, {{ $json.data }}\" ,\n  \"seed\": 4294967295,\n  \"model\": \"gen3a_turbo\",\n  \"promptText\": \"string\",\n  \"duration\": 5,\n  \"ratio\": \"1280:768\"\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        300
+      ],
+      "id": "c8d6e626-8291-41c1-9284-5014de37597f",
+      "name": "Generate Runway Video1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UWSHU2utn5E6ZJC1",
+          "name": "AIS Runway Video"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Workflow 1",
+        "height": 240,
+        "width": 660,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -60
+      ],
+      "id": "1cf3d5cc-72b2-4e7e-be9d-906bfa7bfd84",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Workflow 2\n",
+        "height": 260,
+        "width": 1480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        240
+      ],
+      "id": "e11ad6ee-10ab-4b2b-a8a2-efae7359bbe6",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Load Local Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Runway Video": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get Runway Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Local Image": {
+      "main": [
+        [
+          {
+            "node": "Convert To Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert To Base64": {
+      "main": [
+        [
+          {
+            "node": "Generate Runway Video1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get Runway Video1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Runway Video1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "846638e4-c751-4ff5-b94a-1939d1a9d174",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "hcfTPBEp0wrQOiSM",
+  "tags": []
+}
