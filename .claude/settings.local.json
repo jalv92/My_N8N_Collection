@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__github-mcp__get_me",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(true)",
+      "Bash(git push:*)",
+      "mcp__github-mcp__get_file_contents",
+      "mcp__github-mcp__create_branch",
+      "Bash(git remote set-url:*)",
+      "Bash(chmod:*)",
+      "mcp__github-mcp__list_commits",
+      "mcp__github-mcp__search_code",
+      "Bash(find:*)"
+    ],
+    "deny": []
+  }
+}
