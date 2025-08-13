@@ -1,0 +1,677 @@
+{
+  "name": "LinkedIn AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "newEmailInInbox"
+      },
+      "id": "d93c7f40-0241-4a75-8731-d33c3ce0087e",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        2120,
+        1060
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3hbsVMJNJy6mN9ui",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "96c14e0e-bd67-46b8-ab65-0c1c4df0df09",
+              "name": "from",
+              "value": "={{ $('Gmail Trigger').item.json.headers.from }}",
+              "type": "string"
+            },
+            {
+              "id": "b936a74f-c9c5-4701-b4f8-09c3cea4c302",
+              "name": "subject",
+              "value": "={{ $('Gmail Trigger').item.json.headers.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "66b963e2-35fa-410f-98ee-6ba0ddaaf32f",
+              "name": "snippet",
+              "value": "={{ $('Gmail Trigger').item.json.snippet }}",
+              "type": "string"
+            },
+            {
+              "id": "fb45f68f-eb95-4739-b7b5-d960ab019d77",
+              "name": "body",
+              "value": "={{ $('Gmail Trigger').item.json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "0e7c6d4e-da22-4a32-b0ae-e7a59e40bc08",
+              "name": "email_id",
+              "value": "={{ $('Gmail Trigger').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "0b956e87-de2c-4ce1-9a76-8f3a6f3e8a43",
+              "name": "thread_id",
+              "value": "={{ $('Gmail Trigger').item.json.threadId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "include": "none",
+        "options": {}
+      },
+      "id": "fc29a0fe-fa06-42b3-abe6-c44b36f39a5f",
+      "name": "Extract Email Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2320,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI assistant specialized in identifying LinkedIn profiles in emails. Your task is to:\n\n1. **Extract LinkedIn username** from LinkedIn profile URLs\n2. **Detect if the email is from LinkedIn** about someone viewing your profile\n3. **Return structured JSON** with the extracted information\n\nExpected output format:\n```json\n{\n  \"has_linkedin_profile\": true/false,\n  \"linkedin_username\": \"username\" or null,\n  \"is_profile_view_notification\": true/false,\n  \"profile_viewer_name\": \"name\" or null\n}\n```\n\nRules:\n- For LinkedIn URLs like linkedin.com/in/john-doe, extract \"john-doe\"\n- For profile view notifications, extract the viewer's name\n- If no LinkedIn profile found, return has_linkedin_profile: false\n- Always return valid JSON"
+            }
+          ]
+        },
+        "simplify": false,
+        "text": "=Analyze this email and extract LinkedIn profile information:\n\nFrom: {{ $json.from }}\nSubject: {{ $json.subject }}\nSnippet: {{ $json.snippet }}\nBody: {{ $json.body }}\n\nReturn the structured JSON response.",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "a5b8fb98-7d2e-4e96-8e13-3cf73bb0c6ec",
+      "name": "Identify LinkedIn Profile",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.4,
+      "position": [
+        2520,
+        1060
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "r0cGweUuv9gwTgLy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc3e5d65-19d9-493b-ab49-b9fef656e3a9",
+              "name": "linkedin_data",
+              "value": "={{ JSON.parse($json.message.content) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "includeFields": "from, subject, body, email_id, thread_id",
+        "options": {}
+      },
+      "id": "01a19b7a-9c0a-4ab9-a867-6e582697e41e",
+      "name": "Parse LinkedIn Detection",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2720,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a7cf2838-c95f-4a4b-b02f-8d8f45c5e06f",
+              "leftValue": "={{ $json.linkedin_data.has_linkedin_profile }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "03c5e8df-4636-4c8b-90f9-89e3fbf04f19",
+      "name": "Has LinkedIn Profile?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2920,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlyProperties": true,
+        "values": {
+          "string": [
+            {
+              "name": "creators",
+              "value": "={{ $json.linkedin_data.linkedin_username }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "95a8e491-6638-4ee1-8810-6f7cdbe82ea5",
+      "name": "Prepare Creator List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        3120,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "creators",
+        "splitOutOption": {
+          "values": {
+            "separator": ","
+          }
+        },
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "b959a4f3-a1de-4fb9-9419-e965b5e7e8f1",
+      "name": "Split Creators (if multiple)",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3320,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc3e5d65-19d9-493b-ab49-b9fef656e3a9",
+              "name": "username",
+              "value": "={{ $json.creators.trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "include": "none",
+        "options": {}
+      },
+      "id": "d41c5e3a-cf95-4c96-8c69-de5e17e8091f",
+      "name": "Loop Over Creators",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3520,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/curious_coder~linkedin-profile-scraper/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "YOUR_APIFY_API_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"username\": \"{{ $('Loop Over Creators').item.json.username }}\"\n}",
+        "options": {}
+      },
+      "id": "b8bc9bb1-a736-43d8-a379-a43b969f26e9",
+      "name": "Get LinkedIn Creator Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3720,
+        1040
+      ],
+      "alwaysOutputData": true,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "content": "You are an AI sales assistant specialized in analyzing LinkedIn profiles and generating personalized outreach messages. Your role is to:\n\n1. **Analyze Profile Data**: Review the LinkedIn profile information provided\n2. **Identify Key Points**: Find relevant connection points, achievements, or interests\n3. **Generate Personalized Message**: Create a compelling, personalized outreach message\n\n**Message Guidelines**:\n- Keep it concise (150-200 words)\n- Start with a personalized observation about their work/content\n- Mention a specific achievement or recent post if available\n- Include a clear value proposition\n- End with a soft call-to-action\n- Professional but conversational tone\n- Avoid generic templates\n\n**Structure**:\n1. Personal connection/observation\n2. Value you can provide\n3. Soft call-to-action\n\nGenerate ONLY the message text, no additional commentary."
+            }
+          ]
+        },
+        "simplify": false,
+        "text": "=Generate a personalized LinkedIn outreach message based on this profile:\n\n**Name**: {{ $json.name }}\n**Headline**: {{ $json.headline }}\n**Summary**: {{ $json.summary }}\n**Current Position**: {{ $json.currentPositionTitle }} at {{ $json.currentPositionCompany }}\n**Location**: {{ $json.location }}\n**Industry**: {{ $json.industry }}\n**Followers**: {{ $json.followers }}\n**Connections**: {{ $json.connections }}\n\n**Experience**:\n{{ JSON.stringify($json.experience, null, 2) }}\n\n**Education**:\n{{ JSON.stringify($json.education, null, 2) }}\n\n**Skills**:\n{{ $json.skills ? $json.skills.join(', ') : 'Not provided' }}\n\n**About/Bio**:\n{{ $json.about }}\n\nGenerate a compelling, personalized outreach message for this LinkedIn user.",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "e8f5e789-2a89-4f0b-beab-e8cc08bb0a97",
+      "name": "Generate Personalized Message",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.4,
+      "position": [
+        3920,
+        1040
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "r0cGweUuv9gwTgLy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc3e5d65-19d9-493b-ab49-b9fef656e3a9",
+              "name": "profile_data",
+              "value": "={{ $('Get LinkedIn Creator Info').item.json }}",
+              "type": "object"
+            },
+            {
+              "id": "42ab9bb0-c5f9-4c4e-8bb9-7f5e0c8e9f23",
+              "name": "personalized_message",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "8c3a2f91-1234-5678-90ab-cdef12345678",
+              "name": "username",
+              "value": "={{ $('Loop Over Creators').item.json.username }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "include": "none",
+        "options": {}
+      },
+      "id": "c1e2f789-3456-7890-abcd-ef1234567890",
+      "name": "Compile Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4120,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "content": "You are an AI email composer. Create a professional reply to the original email that:\n\n1. Thanks them for reaching out\n2. Acknowledges the LinkedIn connection/profile view\n3. Includes the personalized outreach message\n4. Maintains a professional, friendly tone\n5. Signs off appropriately\n\n**Email Structure**:\n- Greeting\n- Thank you/acknowledgment\n- Personalized message (provided)\n- Professional closing\n- Signature\n\nKeep the email natural and conversational."
+            }
+          ]
+        },
+        "simplify": false,
+        "text": "=Compose a reply email based on:\n\n**Original Email From**: {{ $('Parse LinkedIn Detection').item.json.from }}\n**Original Subject**: {{ $('Parse LinkedIn Detection').item.json.subject }}\n**Original Email Body**: {{ $('Parse LinkedIn Detection').item.json.body }}\n\n**LinkedIn Profile Analyzed**: {{ $json.username }}\n**Profile Name**: {{ $json.profile_data.name }}\n**Profile Headline**: {{ $json.profile_data.headline }}\n\n**Personalized Message to Include**:\n{{ $json.personalized_message }}\n\nCreate a complete email reply that naturally incorporates the personalized message.",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "d2e3f890-4567-8901-bcde-f12345678901",
+      "name": "Generate Email Reply",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.4,
+      "position": [
+        4320,
+        1040
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "r0cGweUuv9gwTgLy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "draft",
+        "subject": "=Re: {{ $('Parse LinkedIn Detection').item.json.subject }}",
+        "message": "={{ $json.message.content }}",
+        "options": {
+          "threadId": "={{ $('Parse LinkedIn Detection').item.json.thread_id }}"
+        }
+      },
+      "id": "e3f4a901-5678-9012-cdef-123456789012",
+      "name": "Create Gmail Draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4520,
+        1040
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3hbsVMJNJy6mN9ui",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc3e5d65-19d9-493b-ab49-b9fef656e3a9",
+              "name": "status",
+              "value": "LinkedIn profile processed and draft created",
+              "type": "string"
+            },
+            {
+              "id": "42ab9bb0-c5f9-4c4e-8bb9-7f5e0c8e9f23",
+              "name": "draft_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8c3a2f91-1234-5678-90ab-cdef12345678",
+              "name": "thread_id",
+              "value": "={{ $('Parse LinkedIn Detection').item.json.thread_id }}",
+              "type": "string"
+            },
+            {
+              "id": "9d4b5c02-2345-6789-01bc-def234567890",
+              "name": "linkedin_username",
+              "value": "={{ $('Compile Results').item.json.username }}",
+              "type": "string"
+            },
+            {
+              "id": "ae5c6d13-3456-7890-12cd-ef3456789012",
+              "name": "profile_name",
+              "value": "={{ $('Compile Results').item.json.profile_data.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "include": "none",
+        "options": {}
+      },
+      "id": "f4a5b012-6789-0123-def4-567890123456",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4720,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc3e5d65-19d9-493b-ab49-b9fef656e3a9",
+              "name": "status",
+              "value": "No LinkedIn profile detected in email",
+              "type": "string"
+            },
+            {
+              "id": "42ab9bb0-c5f9-4c4e-8bb9-7f5e0c8e9f23",
+              "name": "email_subject",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "8c3a2f91-1234-5678-90ab-cdef12345678",
+              "name": "email_from",
+              "value": "={{ $json.from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "include": "none",
+        "options": {}
+      },
+      "id": "a5b6c123-7890-1234-ef56-789012345678",
+      "name": "No LinkedIn Profile",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        1240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b6c7d234-8901-2345-f067-890123456789",
+      "name": "End",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4920,
+        1140
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Data": {
+      "main": [
+        [
+          {
+            "node": "Identify LinkedIn Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify LinkedIn Profile": {
+      "main": [
+        [
+          {
+            "node": "Parse LinkedIn Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LinkedIn Detection": {
+      "main": [
+        [
+          {
+            "node": "Has LinkedIn Profile?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has LinkedIn Profile?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Creator List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No LinkedIn Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Creator List": {
+      "main": [
+        [
+          {
+            "node": "Split Creators (if multiple)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Creators (if multiple)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Creators",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Creators": {
+      "main": [
+        [
+          {
+            "node": "Get LinkedIn Creator Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn Creator Info": {
+      "main": [
+        [
+          {
+            "node": "Generate Personalized Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Personalized Message": {
+      "main": [
+        [
+          {
+            "node": "Compile Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Results": {
+      "main": [
+        [
+          {
+            "node": "Generate Email Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email Reply": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Response": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No LinkedIn Profile": {
+      "main": [
+        [
+          {
+            "node": "End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "01234567-89ab-cdef-0123-456789abcdef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+  },
+  "id": "abc123def456ghi789",
+  "tags": []
+}
